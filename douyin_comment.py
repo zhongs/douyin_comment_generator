@@ -1,5 +1,4 @@
 import os
-from pathlib import Path
 import yt_dlp
 import requests
 import json
@@ -8,13 +7,12 @@ import re
 
 class DouyinCommentGenerator:
     def __init__(self):
-        self.download_path = Path("downloads")
-        self.download_path.mkdir(exist_ok=True)
-        
-        # yt-dlp配置
+        # yt-dlp配置 - 只提取信息，不下载
         self.ydl_opts = {
             'format': 'best',
-            'outtmpl': str(self.download_path / '%(title)s.%(ext)s'),
+            'extract_flat': True,
+            'skip_download': True,
+            'quiet': True
         }
         
         # 初始化文心一言API配置
@@ -75,16 +73,16 @@ class DouyinCommentGenerator:
         return url
 
     def download_video(self, url):
-        """下载抖音视频"""
+        """获取抖音视频信息（不实际下载）"""
         try:
             # 转换URL格式
             converted_url = self._convert_url(url)
             
             with yt_dlp.YoutubeDL(self.ydl_opts) as ydl:
-                info = ydl.extract_info(converted_url, download=True)
+                info = ydl.extract_info(converted_url, download=False)
                 return info.get('title', None)
         except Exception as e:
-            print(f"下载视频时出错: {e}")
+            print(f"获取视频信息时出错: {e}")
             return None
 
     def generate_comment(self, video_title):
