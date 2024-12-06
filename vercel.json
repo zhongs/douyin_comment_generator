@@ -12,10 +12,6 @@
     ],
     "routes": [
         {
-            "src": "/static/(.*)",
-            "dest": "/static/$1"
-        },
-        {
             "src": "/(.*)",
             "dest": "app.py"
         }
@@ -24,5 +20,11 @@
         "ERNIE_API_KEY": "@ernie_api_key",
         "ERNIE_SECRET_KEY": "@ernie_secret_key",
         "PYTHONUNBUFFERED": "1"
+    },
+    "functions": {
+        "app.py": {
+            "memory": 1024,
+            "maxDuration": 10
+        }
     }
 }
