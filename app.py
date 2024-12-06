@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify
 from douyin_comment import DouyinCommentGenerator
+from history import HistoryManager
 import os
 from dotenv import load_dotenv
 from flask_limiter import Limiter
@@ -18,6 +19,9 @@ limiter = Limiter(
     storage_uri="memory://"
 )
 
+# 初始化历史记录管理器
+history_manager = HistoryManager()
+
 # 延迟初始化 DouyinCommentGenerator
 generator = None
 
@@ -30,6 +34,10 @@ def get_generator():
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/history-page')
+def history_page():
+    return render_template('history.html')
 
 @app.route('/generate', methods=['POST'])
 @limiter.limit("10 per minute")  # 每分钟最多10次请求
@@ -45,21 +53,36 @@ def generate():
         except Exception as e:
             return jsonify({'error': f'API初始化失败: {str(e)}'}), 500
 
-        # 下载视频并生成评论
-        video_title = gen.download_video(url)
-        if not video_title:
-            return jsonify({'error': '视频下载失败，请检查链接是否正确'}), 400
+        # 下载视频信息并生成评论
+        video_info = gen.download_video(url)
+        if not video_info:
+            return jsonify({'error': '视频信息获取失败，请检查链接是否正确'}), 400
 
-        comment = gen.generate_comment(video_title)
+        comment = gen.generate_comment(video_info['title'])
         if not comment:
             return jsonify({'error': '评论生成失败，请稍后再试'}), 500
 
+        # 保存历史记录
+        history_manager.add_record(url, video_info['title'], comment)
+
         return jsonify({
             'success': True,
-            'title': video_title,
+            'title': video_info['title'],
+            'thumbnail': video_info['thumbnail'],
             'comment': comment
         })
 
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/history')
+def get_history():
+    try:
+        records = history_manager.get_records()
+        return jsonify({
+            'success': True,
+            'records': records
+        })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

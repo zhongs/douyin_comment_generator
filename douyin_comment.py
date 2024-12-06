@@ -4,24 +4,16 @@ import requests
 import json
 import time
 import re
+import base64
 
 class DouyinCommentGenerator:
     def __init__(self):
-        # yt-dlp配置 - 只提取信息，不下载
+        # yt-dlp配置 - 获取缩略图
         self.ydl_opts = {
             'quiet': True,
             'no_warnings': True,
-            'extract_flat': True,
+            'extract_flat': False,  # 需要获取完整信息
             'skip_download': True,
-            'no_write_playlist_metafiles': True,
-            'writeinfojson': False,
-            'writedescription': False,
-            'writethumbnail': False,
-            'writesubtitles': False,
-            'writeautomaticsub': False,
-            'allsubtitles': False,
-            'ignoreerrors': True,
-            'clean_infojson': False,
             'format': 'best'
         }
         
@@ -83,27 +75,44 @@ class DouyinCommentGenerator:
         return url
 
     def download_video(self, url):
-        """获取抖音视频信息（不实际下载）"""
+        """下载视频并返回标题和缩略图"""
         try:
             # 转换URL格式
             converted_url = self._convert_url(url)
             print("正在获取视频信息...")
             
             with yt_dlp.YoutubeDL(self.ydl_opts) as ydl:
-                try:
-                    # 先尝试只获取基本信息
-                    basic_info = ydl.extract_info(converted_url, download=False, process=False)
-                    if basic_info and 'title' in basic_info:
-                        return basic_info['title']
-                    
-                    # 如果获取基本信息失败，尝试获取完整信息
-                    info = ydl.extract_info(converted_url, download=False)
-                    return info.get('title', None)
-                except Exception as e:
-                    print(f"提取视频信息时出错: {str(e)}")
+                info = ydl.extract_info(converted_url, download=False)
+                if not info:
                     return None
+                
+                # 获取视频标题
+                title = info.get('title', '')
+                
+                # 获取缩略图URL
+                thumbnail_url = info.get('thumbnail', '')
+                thumbnail_base64 = None
+                
+                if thumbnail_url:
+                    try:
+                        # 使用requests下载缩略图
+                        response = requests.get(thumbnail_url)
+                        if response.status_code == 200:
+                            thumbnail_base64 = base64.b64encode(response.content).decode('utf-8')
+                            print("成功获取缩略图")
+                        else:
+                            print(f"获取缩略图失败: HTTP {response.status_code}")
+                    except Exception as e:
+                        print(f"获取缩略图失败: {str(e)}")
+                else:
+                    print("未找到缩略图URL")
+                
+                return {
+                    'title': title,
+                    'thumbnail': thumbnail_base64
+                }
         except Exception as e:
-            print(f"获取视频信息时出错: {e}")
+            print(f"下载视频信息失败: {str(e)}")
             return None
 
     def generate_comment(self, video_title):
