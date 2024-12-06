@@ -10,21 +10,6 @@
 - 美观的Web界面
 - 支持多种视频链接格式
 
-## 部署步骤
-
-1. Fork 这个仓库到你的GitHub账号
-
-2. 在Vercel上部署:
-   - 访问 [Vercel](https://vercel.com)
-   - 使用GitHub账号登录
-   - 点击 "Import Project"
-   - 选择你fork的仓库
-   - 设置环境变量:
-     - `ERNIE_API_KEY`: 百度智能云API Key
-     - `ERNIE_SECRET_KEY`: 百度智能云Secret Key
-
-3. 完成部署！
-
 ## 本地开发
 
 1. 克隆仓库:
