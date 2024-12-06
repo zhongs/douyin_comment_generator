@@ -9,10 +9,20 @@ class DouyinCommentGenerator:
     def __init__(self):
         # yt-dlp配置 - 只提取信息，不下载
         self.ydl_opts = {
-            'format': 'best',
+            'quiet': True,
+            'no_warnings': True,
             'extract_flat': True,
             'skip_download': True,
-            'quiet': True
+            'no_write_playlist_metafiles': True,
+            'writeinfojson': False,
+            'writedescription': False,
+            'writethumbnail': False,
+            'writesubtitles': False,
+            'writeautomaticsub': False,
+            'allsubtitles': False,
+            'ignoreerrors': True,
+            'clean_infojson': False,
+            'format': 'best'
         }
         
         # 初始化文心一言API配置
@@ -77,10 +87,21 @@ class DouyinCommentGenerator:
         try:
             # 转换URL格式
             converted_url = self._convert_url(url)
+            print("正在获取视频信息...")
             
             with yt_dlp.YoutubeDL(self.ydl_opts) as ydl:
-                info = ydl.extract_info(converted_url, download=False)
-                return info.get('title', None)
+                try:
+                    # 先尝试只获取基本信息
+                    basic_info = ydl.extract_info(converted_url, download=False, process=False)
+                    if basic_info and 'title' in basic_info:
+                        return basic_info['title']
+                    
+                    # 如果获取基本信息失败，尝试获取完整信息
+                    info = ydl.extract_info(converted_url, download=False)
+                    return info.get('title', None)
+                except Exception as e:
+                    print(f"提取视频信息时出错: {str(e)}")
+                    return None
         except Exception as e:
             print(f"获取视频信息时出错: {e}")
             return None
