@@ -59,7 +59,7 @@
                 <div class="bg-gray-50 rounded-lg p-4">
                     <div class="flex justify-between items-center mb-2">
                         <h3 class="text-lg font-semibold">生成的评论</h3>
-                        <button onclick="copyComment(event)" 
+                        <button id="copy-button" 
                             class="text-blue-500 hover:text-blue-600 text-sm flex items-center">
                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
@@ -81,6 +81,14 @@
     </div>
 
     <script>
+        // 页面加载完成后添加事件监听器
+        document.addEventListener('DOMContentLoaded', function() {
+            const copyButton = document.getElementById('copy-button');
+            if (copyButton) {
+                copyButton.addEventListener('click', copyComment);
+            }
+        });
+
         async function generateComment() {
             const url = document.getElementById('url').value.trim();
             if (!url) {
@@ -140,12 +148,35 @@
             document.getElementById('result').classList.add('hidden');
         }
 
-        async function copyComment(event) {
+        async function copyComment() {
             const commentText = document.getElementById('comment').textContent;
+            const copyButton = document.getElementById('copy-button');
+            
             try {
-                await navigator.clipboard.writeText(commentText);
-                // 显示临时提示
-                const copyButton = event.currentTarget;
+                // 首先尝试使用 Clipboard API
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(commentText);
+                } else {
+                    // 回退到 execCommand 方法
+                    const textArea = document.createElement('textarea');
+                    textArea.value = commentText;
+                    textArea.style.position = 'fixed';
+                    textArea.style.left = '-999999px';
+                    textArea.style.top = '-999999px';
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+                    
+                    try {
+                        document.execCommand('copy');
+                        textArea.remove();
+                    } catch (err) {
+                        textArea.remove();
+                        throw new Error('复制失败');
+                    }
+                }
+
+                // 更新按钮状态
                 const originalText = copyButton.innerHTML;
                 copyButton.innerHTML = `
                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -153,6 +184,7 @@
                     </svg>
                     已复制！
                 `;
+                
                 setTimeout(() => {
                     copyButton.innerHTML = originalText;
                 }, 2000);
