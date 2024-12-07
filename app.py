@@ -109,7 +109,7 @@ def ratelimit_handler(e):
     }), 429
 
 # Vercel需要这个
-app.debug = True
+app.debug = False
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
