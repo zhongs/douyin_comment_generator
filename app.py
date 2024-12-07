@@ -20,7 +20,7 @@ limiter = Limiter(
 )
 
 # 初始化历史记录管理器
-history_manager = HistoryManager()
+history_manager = HistoryManager(app)
 
 # 延迟初始化 DouyinCommentGenerator
 generator = None
@@ -35,67 +35,81 @@ def get_generator():
 def index():
     return render_template('index.html')
 
-@app.route('/history-page')
+@app.route('/history')
 def history_page():
     return render_template('history.html')
 
-@app.route('/generate', methods=['POST'])
+@app.route('/api/generate', methods=['POST'])
 @limiter.limit("10 per minute")  # 每分钟最多10次请求
 def generate():
     try:
         url = request.json.get('url')
         if not url:
-            return jsonify({'error': '请提供视频链接'}), 400
+            return jsonify({'error': 'Please provide video URL'}), 400
 
         # 获取生成器实例
         try:
             gen = get_generator()
         except Exception as e:
-            return jsonify({'error': f'API初始化失败: {str(e)}'}), 500
+            return jsonify({'error': 'API initialization failed: {0}'.format(str(e))}), 500
 
         # 下载视频信息并生成评论
         video_info = gen.download_video(url)
         if not video_info:
-            return jsonify({'error': '视频信息获取失败，请检查链接是否正确'}), 400
+            return jsonify({'error': 'Failed to get video info, please check the URL'}), 400
 
         comment = gen.generate_comment(video_info['title'])
         if not comment:
-            return jsonify({'error': '评论生成失败，请稍后再试'}), 500
+            return jsonify({'error': 'Failed to generate comment, please try again later'}), 500
 
         # 保存历史记录
-        history_manager.add_record(url, video_info['title'], comment)
+        history_manager.add_record(
+            url, 
+            video_info['title'], 
+            comment,
+            video_info.get('thumbnail_url')
+        )
 
         return jsonify({
             'success': True,
             'title': video_info['title'],
-            'thumbnail': video_info['thumbnail'],
+            'thumbnail_url': video_info.get('thumbnail_url'),
             'comment': comment
         })
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Server error: {0}'.format(str(e))}), 500
 
-@app.route('/history')
+@app.route('/api/history')
 def get_history():
     try:
-        records = history_manager.get_records()
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 10, type=int)
+        
+        # 限制每页数量，防止请求过大
+        per_page = min(per_page, 50)
+        
+        records = history_manager.get_records(page=page, per_page=per_page)
         return jsonify({
             'success': True,
-            'records': records
+            **records
         })
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 # 添加错误处理
 @app.errorhandler(429)
 def ratelimit_handler(e):
     return jsonify({
-        'error': '请求太频繁，请稍后再试',
-        'details': f'请等待一分钟后再试。{str(e.description)}'
+        'error': 'Rate limit exceeded',
+        'details': 'Please wait for a minute. {0}'.format(str(e.description))
     }), 429
 
 # Vercel需要这个
 app.debug = True
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+    app.run(host='0.0.0.0', port=5000)

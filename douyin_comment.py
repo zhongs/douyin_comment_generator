@@ -53,7 +53,6 @@ class DouyinCommentGenerator:
         payload = {
             "messages": messages
         }
-        
         try:
             response = requests.post(url, headers=headers, json=payload)
             result = response.json()
@@ -91,25 +90,10 @@ class DouyinCommentGenerator:
                 
                 # 获取缩略图URL
                 thumbnail_url = info.get('thumbnail', '')
-                thumbnail_base64 = None
-                
-                if thumbnail_url:
-                    try:
-                        # 使用requests下载缩略图
-                        response = requests.get(thumbnail_url)
-                        if response.status_code == 200:
-                            thumbnail_base64 = base64.b64encode(response.content).decode('utf-8')
-                            print("成功获取缩略图")
-                        else:
-                            print(f"获取缩略图失败: HTTP {response.status_code}")
-                    except Exception as e:
-                        print(f"获取缩略图失败: {str(e)}")
-                else:
-                    print("未找到缩略图URL")
                 
                 return {
                     'title': title,
-                    'thumbnail': thumbnail_base64
+                    'thumbnail_url': thumbnail_url
                 }
         except Exception as e:
             print(f"下载视频信息失败: {str(e)}")
