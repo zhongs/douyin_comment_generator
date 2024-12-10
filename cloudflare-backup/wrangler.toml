@@ -1,0 +1,10 @@
+name = "vercel-proxy"
+main = "src/worker.js"
+compatibility_date = "2024-12-10"
+
+[vars]
+VERCEL_URL = "douyin-comment-generator.vercel.app"
+
+[[routes]]
+pattern = "proxy.hizs.top/*"
+custom_domain = true

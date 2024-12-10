@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, jsonify
-from douyin_comment import DouyinCommentGenerator
-from history import HistoryManager
+from src.douyin_comment import DouyinCommentGenerator
+from src.history import HistoryManager
 import os
 from dotenv import load_dotenv
 from flask_limiter import Limiter

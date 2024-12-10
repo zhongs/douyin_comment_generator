@@ -10,6 +10,11 @@
 - 美观的Web界面
 - 支持多种视频链接格式
 
+## 访问地址
+
+- 主站点：https://douyin-comment-generator.vercel.app/
+- 国内加速：https://proxy.hizs.top/
+
 ## 本地开发
 
 1. 克隆仓库:
