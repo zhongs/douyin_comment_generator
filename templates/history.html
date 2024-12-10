@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>评论历史记录</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/heic2any@0.0.4/dist/heic2any.min.js"></script>
 </head>
 <body class="bg-gray-100 min-h-screen">
     <div class="container mx-auto px-4 py-8">
@@ -32,6 +33,41 @@
         const perPage = 10;
         let isLoading = false;
         let hasMore = true;
+
+        async function convertHeicToJpeg(imgElement, url) {
+            try {
+                // 首先尝试直接将 .heic 替换为 .jpeg
+                const jpegUrl = url.replace(/\.heic/i, '.jpeg');
+                imgElement.src = jpegUrl;
+                
+                // 如果还是失败，则尝试下载并转换
+                imgElement.onerror = async function() {
+                    try {
+                        const response = await fetch(url);
+                        const blob = await response.blob();
+                        
+                        // 检查是否是HEIC格式
+                        if (blob.type.includes('heic') || url.toLowerCase().includes('.heic')) {
+                            const jpegBlob = await heic2any({
+                                blob: blob,
+                                toType: 'image/jpeg',
+                                quality: 0.8
+                            });
+                            imgElement.src = URL.createObjectURL(jpegBlob);
+                        } else {
+                            // 如果不是HEIC格式，隐藏图片
+                            imgElement.style.display = 'none';
+                        }
+                    } catch (error) {
+                        console.error('图片转换失败:', error);
+                        imgElement.style.display = 'none';
+                    }
+                };
+            } catch (error) {
+                console.error('图片处理失败:', error);
+                imgElement.style.display = 'none';
+            }
+        }
 
         function showError(message) {
             const errorDiv = document.getElementById('error-message');
@@ -102,7 +138,7 @@
                                         <div class="relative pb-[56.25%] rounded-lg overflow-hidden bg-gray-200">
                                             <img src="${record.thumbnail_url}" 
                                                 alt="视频缩略图" 
-                                                onerror="this.style.display='none'"
+                                                onerror="convertHeicToJpeg(this, '${record.thumbnail_url}')"
                                                 class="absolute inset-0 w-full h-full object-cover">
                                         </div>
                                     </div>
@@ -115,17 +151,8 @@
                                     <a href="${record.video_url}" target="_blank" class="text-blue-500 hover:text-blue-600 text-sm mb-2 inline-block">
                                         查看视频
                                     </a>
-                                    <div class="mt-2 relative group">
+                                    <div class="mt-2">
                                         <p class="text-gray-800 whitespace-pre-wrap">${record.comment}</p>
-                                        <button onclick="copyComment(this)" 
-                                            class="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-blue-500 hover:text-blue-600 text-sm flex items-center"
-                                            data-comment="${record.comment}">
-                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                                    d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
-                                            </svg>
-                                            复制评论
-                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -147,26 +174,6 @@
             } finally {
                 isLoading = false;
                 showLoading(false);
-            }
-        }
-
-        async function copyComment(button) {
-            const commentText = button.getAttribute('data-comment');
-            try {
-                await navigator.clipboard.writeText(commentText);
-                const originalText = button.innerHTML;
-                button.innerHTML = `
-                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                    已复制！
-                `;
-                setTimeout(() => {
-                    button.innerHTML = originalText;
-                }, 2000);
-            } catch (err) {
-                console.error('复制失败:', err);
-                showError('复制失败，请手动复制');
             }
         }
 
