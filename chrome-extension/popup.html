@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>抖音评论生成器</title>
+  <style>
+    body {
+      width: 300px;
+      padding: 10px;
+      font-family: Arial, sans-serif;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    button {
+      background-color: #fe2c55;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #e61e43;
+    }
+    button:disabled {
+      background-color: #ffa0b3;
+      cursor: not-allowed;
+    }
+    #result {
+      margin-top: 10px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      min-height: 50px;
+      white-space: pre-wrap;
+    }
+    .loading {
+      display: none;
+      text-align: center;
+      margin: 10px 0;
+      color: #666;
+      font-size: 14px;
+    }
+    .loading .dots {
+      display: inline-block;
+      width: 50px;
+      text-align: left;
+    }
+    @keyframes dot {
+      0%, 20% {
+        opacity: 0;
+      }
+      50% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+      }
+    }
+    .loading .dot {
+      animation: dot 1.5s infinite;
+      opacity: 0;
+      display: inline-block;
+      margin-left: 2px;
+    }
+    .loading .dot:nth-child(2) {
+      animation-delay: 0.5s;
+    }
+    .loading .dot:nth-child(3) {
+      animation-delay: 1s;
+    }
+    .button-group {
+      display: flex;
+      gap: 10px;
+    }
+    #copyBtn {
+      display: none;
+      background-color: #1aad19;
+    }
+    #copyBtn:hover {
+      background-color: #168f14;
+    }
+    .copy-success {
+      display: none;
+      color: #1aad19;
+      text-align: center;
+      margin-top: 5px;
+      font-size: 12px;
+      animation: fadeIn 0.3s ease-in;
+    }
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-5px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="button-group">
+      <button id="generateBtn">生成评论</button>
+      <button id="copyBtn">复制评论</button>
+    </div>
+    <div class="loading" id="loading">
+      正在生成评论<span class="dots"><span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></span>
+    </div>
+    <div id="result"></div>
+    <div id="copySuccess" class="copy-success">复制成功！</div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
